@@ -1,0 +1,39 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+
+Route::view('/', 'welcome')->name('home');
+
+Route::middleware(['auth'])->group(function () {
+
+    Route::livewire('/dashboard', 'dashboard-admin')
+    ->name('dashboard');
+
+    Route::middleware(['rol:Administrador'])->group(function () {
+
+        Route::livewire('/roles', 'roles')
+            ->name('roles.index');
+
+        Route::livewire('/usuarios', 'usuarios')
+            ->name('usuarios.index');
+
+        Route::livewire('/ubicaciones', 'ubicaciones')
+    ->name('ubicaciones.index');
+
+    Route::livewire('/categorias-equipos', 'categorias-equipos')
+    ->name('categorias.index');
+
+    Route::livewire('/estados-equipo', 'estados-equipo')
+    ->name('estados.index');
+
+    });
+
+    Route::livewire('/equipos', 'equipos')
+    ->name('equipos.index');
+
+    Route::livewire('/planes-mantenimiento', 'planes-mantenimiento')
+    ->name('planes.index');
+
+});
+
+require __DIR__.'/settings.php';
