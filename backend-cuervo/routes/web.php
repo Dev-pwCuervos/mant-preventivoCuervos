@@ -2,12 +2,29 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'welcome')->name('home');
+Route::get('/', function () {
+    $usuario = auth()->user();
+
+    if (!$usuario) {
+        return redirect()->route('login');
+    }
+
+    if ($usuario->tieneRol('Administrador')) {
+        return redirect()->route('dashboard');
+    }
+
+    if ($usuario->tieneRol('Supervisor')) {
+        return redirect()->route('dashboard');
+    }
+
+    abort(403);
+})->name('home');
 
 Route::middleware(['auth'])->group(function () {
 
     Route::livewire('/dashboard', 'dashboard-admin')
-    ->name('dashboard');
+        ->middleware('rol:Administrador,Supervisor')
+        ->name('dashboard');
 
     Route::middleware(['rol:Administrador'])->group(function () {
 
@@ -18,21 +35,23 @@ Route::middleware(['auth'])->group(function () {
             ->name('usuarios.index');
 
         Route::livewire('/ubicaciones', 'ubicaciones')
-    ->name('ubicaciones.index');
-
-    Route::livewire('/categorias-equipos', 'categorias-equipos')
-    ->name('categorias.index');
-
-    Route::livewire('/estados-equipo', 'estados-equipo')
-    ->name('estados.index');
+            ->name('ubicaciones.index');
 
     });
 
-    Route::livewire('/equipos', 'equipos')
-    ->name('equipos.index');
+    Route::middleware(['rol:Administrador,Supervisor'])->group(function () {
+        Route::livewire('/categorias-equipos', 'categorias-equipos')
+            ->name('categorias.index');
 
-    Route::livewire('/planes-mantenimiento', 'planes-mantenimiento')
-    ->name('planes.index');
+        Route::livewire('/estados-equipo', 'estados-equipo')
+            ->name('estados.index');
+
+        Route::livewire('/equipos', 'equipos')
+            ->name('equipos.index');
+
+        Route::livewire('/planes-mantenimiento', 'planes-mantenimiento')
+            ->name('planes.index');
+    });
 
 });
 

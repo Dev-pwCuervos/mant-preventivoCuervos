@@ -96,3 +96,203 @@ tbody tr:hover {
 .dark .dashboard-progress {
     background-color: rgb(63 63 70);
 }
+
+/* Identidad clara compartida con el panel de operaciones. */
+.cuervo-auth-card {
+    color: #18181b;
+}
+
+.cuervo-auth-card [data-flux-heading],
+.cuervo-auth-card [data-flux-label] {
+    color: #18181b !important;
+}
+
+.cuervo-auth-card [data-flux-subheading],
+.cuervo-auth-card [data-flux-text] {
+    color: #64748b !important;
+}
+
+.cuervo-auth-card input:not([type="checkbox"]) {
+    background: #fff !important;
+    color: #18181b !important;
+}
+
+.cuervo-auth-card input::placeholder {
+    color: #94a3b8 !important;
+}
+
+.cuervo-auth-card input:focus-visible,
+.cuervo-auth-card button:focus-visible,
+.cuervo-auth-card a:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+
+.cuervo-dashboard-heading {
+    padding: 0.25rem 0 0.5rem;
+}
+
+.cuervo-eyebrow {
+    color: #2563eb;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+}
+
+.cuervo-dashboard-heading h1 {
+    margin-top: 0.35rem;
+    color: #18181b;
+    font-size: clamp(1.65rem, 3vw, 2.15rem);
+    font-weight: 750;
+    line-height: 1.2;
+}
+
+.cuervo-dashboard-heading p {
+    margin-top: 0.4rem;
+    color: #64748b;
+    font-size: 0.95rem;
+}
+
+.cuervo-panel {
+    border: 1px solid #e5e7eb;
+    border-radius: 1rem;
+    background: #fff;
+    padding: 1.4rem;
+    box-shadow: 0 6px 24px rgb(15 23 42 / 0.035);
+}
+
+.cuervo-panel [data-flux-heading] {
+    color: #18181b !important;
+}
+
+.cuervo-panel [data-flux-text] {
+    color: #475569 !important;
+}
+
+.cuervo-metric [data-flux-text] {
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+.dark [data-flux-sidebar] [data-flux-sidebar-brand] > div:last-of-type {
+    color: #18181b !important;
+}
+
+.dark [data-flux-sidebar] [data-flux-sidebar-item] {
+    color: #334155 !important;
+}
+
+.dark [data-flux-sidebar] [data-flux-sidebar-item] svg {
+    color: #64748b !important;
+}
+
+.cuervo-metric {
+    border-top: 3px solid #2563eb;
+}
+
+.cuervo-metric:nth-child(2) {
+    border-top-color: #0f766e;
+}
+
+.cuervo-metric:nth-child(3) {
+    border-top-color: #7c3aed;
+}
+
+.cuervo-metric:nth-child(4) {
+    border-top-color: #ea580c;
+}
+
+.cuervo-metric-value {
+    margin-top: 0.8rem;
+    color: #18181b;
+    font-size: 2.2rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.cuervo-metric-value-small {
+    font-size: 1.8rem;
+}
+
+.cuervo-progress {
+    height: 0.65rem;
+    overflow: hidden;
+    border-radius: 9999px;
+    background: #e9edf3;
+}
+
+.cuervo-progress-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: #2563eb;
+}
+
+.cuervo-data-table th {
+    color: #64748b;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.cuervo-data-table td {
+    color: #334155;
+}
+
+.cuervo-data-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+/* Las vistas claras deben conservar contraste aunque Flux recuerde el modo oscuro. */
+body.cuervo-light [data-flux-heading],
+body.cuervo-light [data-flux-label] {
+    color: #18181b !important;
+}
+
+body.cuervo-light [data-flux-subheading],
+body.cuervo-light [data-flux-text] {
+    color: #475569 !important;
+}
+
+body.cuervo-light [data-flux-sidebar-brand] > div:last-of-type {
+    color: #18181b !important;
+}
+
+body.cuervo-light [data-flux-sidebar-group] > div:first-child {
+    color: #64748b !important;
+}
+
+body.cuervo-light [data-flux-sidebar-item] {
+    color: #334155 !important;
+}
+
+body.cuervo-light [data-flux-control]:is(input, textarea, select),
+body.cuervo-light textarea[data-flux-textarea] {
+    background-color: #fff !important;
+    border-color: #cbd5e1 !important;
+    color: #18181b !important;
+    color-scheme: light;
+}
+
+body.cuervo-light [data-flux-control]::placeholder,
+body.cuervo-light textarea[data-flux-textarea]::placeholder {
+    color: #94a3b8 !important;
+}
+
+body.cuervo-light select[data-flux-select-native] option {
+    background-color: #fff !important;
+    color: #18181b !important;
+}
+
+body.cuervo-light [data-flux-link] {
+    color: #1d4ed8 !important;
+    text-decoration-color: #93c5fd !important;
+}
+
+body.cuervo-light [data-flux-link]:hover {
+    color: #1e40af !important;
+}
+
+body.cuervo-light .cuervo-auth-footer {
+    color: #475569 !important;
+}

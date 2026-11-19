@@ -10,45 +10,39 @@ use Livewire\Component;
 
 new class extends Component
 {
-    private function autorizarAdministrador(): void
+    private function autorizarDashboard(): void
     {
         abort_unless(
             auth()->check()
             && auth()->user()->activo
-            && auth()->user()->tieneRol('Administrador'),
+            && auth()->user()->roles()->whereIn('nombre', ['Administrador', 'Supervisor'])->exists(),
             403
         );
     }
 
     public function mount(): void
     {
-        $this->autorizarAdministrador();
+        $this->autorizarDashboard();
     }
 
     public function with(): array
     {
-        $this->autorizarAdministrador();
+        $this->autorizarDashboard();
 
-        return [
+        $esAdministrador = auth()->user()->tieneRol('Administrador');
+        $estados = EstadoEquipo::withCount('equipos')
+            ->orderBy('nombre')
+            ->get();
+
+        $datos = [
+            'esAdministrador' => $esAdministrador,
             'totalEquipos' => Equipo::count(),
-
-            'usuariosActivos' => User::where('activo', true)
-                ->count(),
-
-            'ubicacionesActivas' => Ubicacion::where('activo', true)
-                ->count(),
-
             'planesActivos' => PlanMantenimiento::where('activo', true)
                 ->count(),
-
             'totalCategorias' => CategoriaEquipo::count(),
-
+            'totalEstados' => $estados->count(),
             'equiposRetirados' => Equipo::onlyTrashed()->count(),
-
-            'estados' => EstadoEquipo::withCount('equipos')
-                ->orderBy('nombre')
-                ->get(),
-
+            'estados' => $estados,
             'equiposRecientes' => Equipo::with([
                 'categoria',
                 'ubicacion',
@@ -63,51 +57,62 @@ new class extends Component
                 ->take(5)
                 ->get(),
         ];
+
+        if ($esAdministrador) {
+            $datos['usuariosActivos'] = User::where('activo', true)->count();
+            $datos['ubicacionesActivas'] = Ubicacion::where('activo', true)->count();
+        }
+
+        return $datos;
     }
 };
 
 ?>
 
-<div class="mx-auto max-w-7xl space-y-6 p-6">
+<div class="cuervo-dashboard mx-auto max-w-7xl space-y-6 p-5 sm:p-8">
 
     <!-- ENCABEZADO -->
-    <div>
-        <flux:heading size="xl">
-            Dashboard Administrativo
-        </flux:heading>
-
-        <flux:text>
-            Resumen general del Sistema Cuervo
-        </flux:text>
-    </div>
+    <header class="cuervo-dashboard-heading">
+        <span class="cuervo-eyebrow">PANEL DE CONTROL</span>
+        <h1>{{ $esAdministrador ? 'Dashboard Administrativo' : 'Dashboard de Supervisor' }}</h1>
+        <p>{{ $esAdministrador ? 'Resumen general del Sistema Cuervo' : 'Resumen de equipos y planes de mantenimiento' }}</p>
+    </header>
 
     <!-- INDICADORES -->
     <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
 
-        <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-700">
+        <div class="cuervo-panel cuervo-metric">
             <flux:text>Equipos registrados</flux:text>
-            <div class="mt-3 text-3xl font-bold">
+            <div class="cuervo-metric-value">
                 {{ $totalEquipos }}
             </div>
         </div>
 
-        <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-700">
-            <flux:text>Usuarios activos</flux:text>
-            <div class="mt-3 text-3xl font-bold">
-                {{ $usuariosActivos }}
+        @if($esAdministrador)
+            <div class="cuervo-panel cuervo-metric">
+                <flux:text>Usuarios activos</flux:text>
+                <div class="cuervo-metric-value">{{ $usuariosActivos }}</div>
             </div>
-        </div>
 
-        <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-700">
-            <flux:text>Ubicaciones activas</flux:text>
-            <div class="mt-3 text-3xl font-bold">
-                {{ $ubicacionesActivas }}
+            <div class="cuervo-panel cuervo-metric">
+                <flux:text>Ubicaciones activas</flux:text>
+                <div class="cuervo-metric-value">{{ $ubicacionesActivas }}</div>
             </div>
-        </div>
+        @else
+            <div class="cuervo-panel cuervo-metric">
+                <flux:text>Categorías registradas</flux:text>
+                <div class="cuervo-metric-value">{{ $totalCategorias }}</div>
+            </div>
 
-        <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-700">
+            <div class="cuervo-panel cuervo-metric">
+                <flux:text>Estados registrados</flux:text>
+                <div class="cuervo-metric-value">{{ $totalEstados }}</div>
+            </div>
+        @endif
+
+        <div class="cuervo-panel cuervo-metric">
             <flux:text>Planes activos</flux:text>
-            <div class="mt-3 text-3xl font-bold">
+            <div class="cuervo-metric-value">
                 {{ $planesActivos }}
             </div>
         </div>
@@ -117,16 +122,18 @@ new class extends Component
     <!-- INDICADORES ADICIONALES -->
     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 
-        <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-700">
-            <flux:text>Categorías registradas</flux:text>
-            <div class="mt-2 text-2xl font-semibold">
-                {{ $totalCategorias }}
+        @if($esAdministrador)
+            <div class="cuervo-panel cuervo-metric">
+                <flux:text>Categorías registradas</flux:text>
+                <div class="cuervo-metric-value cuervo-metric-value-small">
+                    {{ $totalCategorias }}
+                </div>
             </div>
-        </div>
+        @endif
 
-        <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-700">
+        <div class="cuervo-panel cuervo-metric">
             <flux:text>Equipos retirados</flux:text>
-            <div class="mt-2 text-2xl font-semibold">
+            <div class="cuervo-metric-value cuervo-metric-value-small">
                 {{ $equiposRetirados }}
             </div>
         </div>
@@ -134,7 +141,7 @@ new class extends Component
     </div>
 
     <!-- EQUIPOS POR ESTADO -->
-    <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-700">
+    <div class="cuervo-panel">
 
         <flux:heading size="lg">
             Equipos por estado
@@ -156,10 +163,10 @@ new class extends Component
                         </span>
                     </div>
 
-                    <div class="h-3 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
+                    <div class="cuervo-progress">
 
                         <div
-                            class="h-full rounded-full bg-blue-600"
+                            class="cuervo-progress-fill"
                             style="width: {{ $totalEquipos > 0
                                 ? ($estado->equipos_count / $totalEquipos) * 100
                                 : 0 }}%"
@@ -182,7 +189,7 @@ new class extends Component
     </div>
 
     <!-- EQUIPOS RECIENTES -->
-    <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-700">
+    <div class="cuervo-panel">
 
         <flux:heading size="lg">
             Últimos equipos registrados
@@ -190,10 +197,10 @@ new class extends Component
 
         <div class="mt-4 overflow-x-auto">
 
-            <table class="w-full text-left text-sm">
+            <table class="cuervo-data-table w-full text-left text-sm">
 
                 <thead>
-                    <tr class="border-b dark:border-zinc-700">
+                    <tr class="border-b border-slate-100">
                         <th class="p-3">Código</th>
                         <th class="p-3">Equipo</th>
                         <th class="p-3">Categoría</th>
@@ -205,7 +212,7 @@ new class extends Component
                 <tbody>
                     @forelse($equiposRecientes as $equipo)
 
-                        <tr class="border-b dark:border-zinc-700">
+                        <tr class="border-b border-slate-100">
 
                             <td class="p-3">
                                 {{ $equipo->codigo }}
@@ -246,7 +253,7 @@ new class extends Component
     </div>
 
     <!-- PLANES RECIENTES -->
-    <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-700">
+    <div class="cuervo-panel">
 
         <flux:heading size="lg">
             Últimos planes de mantenimiento
@@ -254,10 +261,10 @@ new class extends Component
 
         <div class="mt-4 overflow-x-auto">
 
-            <table class="w-full text-left text-sm">
+            <table class="cuervo-data-table w-full text-left text-sm">
 
                 <thead>
-                    <tr class="border-b dark:border-zinc-700">
+                    <tr class="border-b border-slate-100">
                         <th class="p-3">Equipo</th>
                         <th class="p-3">Plan</th>
                         <th class="p-3">Frecuencia</th>
@@ -268,7 +275,7 @@ new class extends Component
                 <tbody>
                     @forelse($planesRecientes as $plan)
 
-                        <tr class="border-b dark:border-zinc-700">
+                        <tr class="border-b border-slate-100">
 
                             <td class="p-3">
                                 {{ $plan->equipo?->nombre ?? 'Equipo retirado' }}

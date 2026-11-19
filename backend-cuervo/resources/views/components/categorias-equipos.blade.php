@@ -14,24 +14,24 @@ new class extends Component
     public string $descripcion = '';
     public string $busqueda = '';
 
-    private function autorizarAdministrador(): void
+    private function autorizarGestion(): void
     {
         abort_unless(
             auth()->check()
             && auth()->user()->activo
-            && auth()->user()->tieneRol('Administrador'),
+            && auth()->user()->roles()->whereIn('nombre', ['Administrador', 'Supervisor'])->exists(),
             403
         );
     }
 
     public function mount(): void
     {
-        $this->autorizarAdministrador();
+        $this->autorizarGestion();
     }
 
     public function guardar(): void
     {
-        $this->autorizarAdministrador();
+        $this->autorizarGestion();
 
         $datos = $this->validate([
             'nombre' => [
@@ -74,7 +74,7 @@ new class extends Component
 
     public function editar(int $id): void
     {
-        $this->autorizarAdministrador();
+        $this->autorizarGestion();
 
         $categoria = CategoriaEquipo::findOrFail($id);
 
@@ -86,7 +86,7 @@ new class extends Component
 
     public function eliminar(int $id): void
     {
-        $this->autorizarAdministrador();
+        $this->autorizarGestion();
 
         $categoria = CategoriaEquipo::findOrFail($id);
 
@@ -109,7 +109,7 @@ new class extends Component
 
     public function cancelar(): void
     {
-        $this->autorizarAdministrador();
+        $this->autorizarGestion();
 
         $this->reset([
             'categoriaEditando',
@@ -123,7 +123,7 @@ new class extends Component
 
     public function with(): array
     {
-        $this->autorizarAdministrador();
+        $this->autorizarGestion();
 
         return [
             'categorias' => CategoriaEquipo::withCount('equipos')
@@ -165,12 +165,12 @@ new class extends Component
 
     <!-- FORMULARIO -->
     <div class="flex justify-end">
-        <flux:button type="button" variant="primary" wire:click="abrirFormulario">Nueva categor?a</flux:button>
+        <flux:button type="button" variant="primary" wire:click="abrirFormulario">Nueva categoría</flux:button>
     </div>
 
     @if($mostrarFormulario)
         <section class="rounded-lg border border-zinc-200 p-5 dark:border-zinc-700">
-        <h2 class="mb-4 text-lg font-semibold">{{ $categoriaEditando ? 'Editar categor?a' : 'Nueva categor?a' }}</h2>
+        <h2 class="mb-4 text-lg font-semibold">{{ $categoriaEditando ? 'Editar categoría' : 'Nueva categoría' }}</h2>
         <form wire:submit="guardar" class="space-y-4">
 
         <flux:input

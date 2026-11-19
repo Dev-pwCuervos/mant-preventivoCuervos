@@ -175,12 +175,12 @@ new class extends Component
 
     <!-- FORMULARIO -->
     <div class="flex justify-end">
-        <flux:button type="button" variant="primary" wire:click="abrirFormulario">Nueva ubicaci?n</flux:button>
+        <flux:button type="button" variant="primary" wire:click="abrirFormulario">Nueva ubicación</flux:button>
     </div>
 
     @if($mostrarFormulario)
         <section class="rounded-lg border border-zinc-200 p-5 dark:border-zinc-700">
-        <h2 class="mb-4 text-lg font-semibold">{{ $ubicacionEditando ? 'Editar ubicaci?n' : 'Nueva ubicaci?n' }}</h2>
+        <h2 class="mb-4 text-lg font-semibold">{{ $ubicacionEditando ? 'Editar ubicación' : 'Nueva ubicación' }}</h2>
         <form wire:submit="guardar" class="space-y-4">
 
         <flux:input

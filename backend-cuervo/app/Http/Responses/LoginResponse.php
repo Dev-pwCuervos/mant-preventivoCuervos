@@ -22,8 +22,12 @@ class LoginResponse implements LoginResponseContract
             ], 200);
         }
 
-        return redirect()->intended(
-            config('fortify.home', '/dashboard')
-        );
+        $usuario = $request->user();
+
+        if ($usuario?->tieneRol('Supervisor') && !$usuario->tieneRol('Administrador')) {
+            return redirect()->route('dashboard');
+        }
+
+        return redirect()->intended(config('fortify.home', '/dashboard'));
     }
 }

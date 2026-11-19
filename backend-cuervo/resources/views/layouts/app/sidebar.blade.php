@@ -1,17 +1,21 @@
 
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     @include('partials.head')
 </head>
 
-<body class="min-h-screen bg-white dark:bg-zinc-800">
+<body class="cuervo-light min-h-screen bg-[#f5f6fa] text-zinc-900">
+@php
+    $esAdministrador = auth()->user()->tieneRol('Administrador');
+    $puedeGestionarEquipo = $esAdministrador || auth()->user()->tieneRol('Supervisor');
+@endphp
 
     <!-- SIDEBAR PRINCIPAL -->
     <flux:sidebar
         sticky
         collapsible="mobile"
-        class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900"
+        class="border-e border-slate-200 bg-white"
     >
 
         <!-- LOGOTIPO -->
@@ -27,115 +31,40 @@
 
         <!-- NAVEGACIÓN -->
         <flux:sidebar.nav>
-
             <flux:sidebar.group heading="Principal" class="grid">
-
-                <flux:sidebar.item
-                    icon="home"
-                    :href="route('dashboard')"
-                    :current="request()->routeIs('dashboard')"
-                    wire:navigate
-                >
+                <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                     Inicio
                 </flux:sidebar.item>
-
             </flux:sidebar.group>
 
-            <!-- ADMINISTRACIÓN -->
             <flux:sidebar.group heading="Administración" class="grid">
+                @if($esAdministrador)
+                    <flux:sidebar.item icon="shield-check" :href="route('roles.index')" :current="request()->routeIs('roles.index')" wire:navigate>
+                        Gestión de Roles
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="users" :href="route('usuarios.index')" :current="request()->routeIs('usuarios.index')" wire:navigate>
+                        Gestión de Usuarios
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="map-pin" :href="route('ubicaciones.index')" :current="request()->routeIs('ubicaciones.index')" wire:navigate>
+                        Gestión de Ubicaciones
+                    </flux:sidebar.item>
+                @endif
 
-                <flux:sidebar.item
-                    icon="shield-check"
-                    :href="route('roles.index')"
-                    :current="request()->routeIs('roles.index')"
-                    wire:navigate
-                >
-                    Gestión de Roles
-                </flux:sidebar.item>
-
-                @auth
-    @if(auth()->user()->activo && auth()->user()->tieneRol('Administrador'))
-        <flux:sidebar.item
-            icon="users"
-            :href="route('usuarios.index')"
-            :current="request()->routeIs('usuarios.index')"
-            wire:navigate
-        >
-            Gestión de Usuarios
-        </flux:sidebar.item>
-    @endif
-@endauth
-
-    @auth
-    @if(auth()->user()->activo && auth()->user()->tieneRol('Administrador'))
-
-        <flux:sidebar.item
-            icon="map-pin"
-            :href="route('ubicaciones.index')"
-            :current="request()->routeIs('ubicaciones.index')"
-            wire:navigate
-        >
-            Gestión de Ubicaciones
-        </flux:sidebar.item>
-
-    @endif
-@endauth
-
-@auth
-    @if(auth()->user()->activo && auth()->user()->tieneRol('Administrador'))
-        <flux:sidebar.item
-            icon="squares-2x2"
-            :href="route('categorias.index')"
-            :current="request()->routeIs('categorias.index')"
-            wire:navigate
-        >
-            Categorías de Equipos
-        </flux:sidebar.item>
-    @endif
-@endauth
-
-@auth
-    @if(auth()->user()->activo && auth()->user()->tieneRol('Administrador'))
-
-        <flux:sidebar.item
-            icon="check-circle"
-            :href="route('estados.index')"
-            :current="request()->routeIs('estados.index')"
-            wire:navigate
-        >
-            Estados de Equipos
-        </flux:sidebar.item>
-
-    @endif
-@endauth
-@auth
-    @if(auth()->user()->activo && auth()->user()->tieneRol('Administrador'))
-        <flux:sidebar.item
-            icon="wrench"
-            :href="route('equipos.index')"
-            :current="request()->routeIs('equipos.index')"
-            wire:navigate
-        >
-            Gestión de Equipos
-        </flux:sidebar.item>
-    @endif
-@endauth
-
-@auth
-    @if(auth()->user()->activo && auth()->user()->tieneRol('Administrador'))
-        <flux:sidebar.item
-            icon="clipboard-document-list"
-            :href="route('planes.index')"
-            :current="request()->routeIs('planes.index')"
-            wire:navigate
-        >
-            Planes de Mantenimiento
-        </flux:sidebar.item>
-    @endif
-@endauth
-
+                @if($puedeGestionarEquipo)
+                    <flux:sidebar.item icon="squares-2x2" :href="route('categorias.index')" :current="request()->routeIs('categorias.index')" wire:navigate>
+                        Categorías de Equipos
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="check-circle" :href="route('estados.index')" :current="request()->routeIs('estados.index')" wire:navigate>
+                        Estados de Equipos
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="wrench" :href="route('equipos.index')" :current="request()->routeIs('equipos.index')" wire:navigate>
+                        Gestión de Equipos
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="clipboard-document-list" :href="route('planes.index')" :current="request()->routeIs('planes.index')" wire:navigate>
+                        Planes de Mantenimiento
+                    </flux:sidebar.item>
+                @endif
             </flux:sidebar.group>
-
         </flux:sidebar.nav>
 
         <flux:spacer />

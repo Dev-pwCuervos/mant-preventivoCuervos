@@ -1,27 +1,18 @@
 <?php
 
-use Laravel\Fortify\Features;
+test('public registration is disabled', function () {
+    $this->assertFalse(Route::has('register'));
+    $this->assertFalse(Route::has('register.store'));
 
-beforeEach(function () {
-    $this->skipUnlessFortifyHas(Features::registration());
-});
-
-test('registration screen can be rendered', function () {
-    $response = $this->get(route('register'));
-
-    $response->assertOk();
-});
-
-test('new users can register', function () {
-    $response = $this->post(route('register.store'), [
-        'name' => 'John Doe',
-        'email' => 'test@example.com',
+    $this->get('/register')->assertNotFound();
+    $this->post('/register', [
+        'nombre' => 'Usuario nuevo',
+        'email' => 'nuevo@example.com',
         'password' => 'password',
         'password_confirmation' => 'password',
-    ]);
+    ])->assertNotFound();
+});
 
-    $response->assertSessionHasNoErrors()
-        ->assertRedirect(route('dashboard', absolute: false));
-
-    $this->assertAuthenticated();
+test('the landing page sends guests to the Cuervo login', function () {
+    $this->get('/')->assertRedirect(route('login'));
 });

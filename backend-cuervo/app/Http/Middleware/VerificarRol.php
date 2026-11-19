@@ -11,7 +11,7 @@ class VerificarRol
     public function handle(
         Request $request,
         Closure $next,
-        string $rol
+        string ...$roles
     ): Response {
 
         $usuario = $request->user();
@@ -22,7 +22,7 @@ class VerificarRol
         }
 
         // Verificar que tenga el rol solicitado
-        if (!$usuario->tieneRol($rol)) {
+        if (!$usuario->roles()->whereIn('nombre', $roles)->exists()) {
             abort(403, 'No tienes permisos para acceder a este módulo.');
         }
 

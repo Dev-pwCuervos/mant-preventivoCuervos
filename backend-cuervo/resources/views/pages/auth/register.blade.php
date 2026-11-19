@@ -79,7 +79,7 @@
             </div>
         </form>
 
-        <div class="text-center text-sm text-zinc-600 dark:text-zinc-400">
+        <div class="cuervo-auth-footer text-center text-sm">
             <span>¿Ya tienes una cuenta?</span>
 
             <flux:link :href="route('login')" wire:navigate>

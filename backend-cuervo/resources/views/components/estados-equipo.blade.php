@@ -13,24 +13,24 @@ new class extends Component
     public string $nombre = '';
     public string $busqueda = '';
 
-    private function autorizarAdministrador(): void
+    private function autorizarGestion(): void
     {
         abort_unless(
             auth()->check()
             && auth()->user()->activo
-            && auth()->user()->tieneRol('Administrador'),
+            && auth()->user()->roles()->whereIn('nombre', ['Administrador', 'Supervisor'])->exists(),
             403
         );
     }
 
     public function mount(): void
     {
-        $this->autorizarAdministrador();
+        $this->autorizarGestion();
     }
 
     public function guardar(): void
     {
-        $this->autorizarAdministrador();
+        $this->autorizarGestion();
 
         $datos = $this->validate([
             'codigo' => [
@@ -95,7 +95,7 @@ new class extends Component
 
     public function editar(int $id): void
     {
-        $this->autorizarAdministrador();
+        $this->autorizarGestion();
 
         $estado = EstadoEquipo::findOrFail($id);
 
@@ -107,7 +107,7 @@ new class extends Component
 
     public function eliminar(int $id): void
     {
-        $this->autorizarAdministrador();
+        $this->autorizarGestion();
 
         $estado = EstadoEquipo::findOrFail($id);
 
@@ -130,7 +130,7 @@ new class extends Component
 
     public function cancelar(): void
     {
-        $this->autorizarAdministrador();
+        $this->autorizarGestion();
 
         $this->reset([
             'estadoEditando',
@@ -144,7 +144,7 @@ new class extends Component
 
     public function with(): array
     {
-        $this->autorizarAdministrador();
+        $this->autorizarGestion();
 
         return [
             'estados' => EstadoEquipo::withCount('equipos')

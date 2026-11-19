@@ -298,17 +298,34 @@ new class extends Component
             </p>
         @enderror
 
+        @if($errors->any())
+            <div role="alert" class="rounded bg-red-100 p-3 text-red-800">
+                <p>Revisa los datos del usuario:</p>
+                <ul class="mt-2 list-disc pl-5">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <!-- BOTONES -->
         <div class="flex gap-2">
 
             <flux:button
                 type="submit"
                 variant="primary"
+                wire:loading.attr="disabled"
+                wire:target="guardar"
             >
                 {{ $usuarioEditando
                     ? 'Actualizar usuario'
                     : 'Registrar usuario' }}
             </flux:button>
+
+            <span wire:loading wire:target="guardar" class="self-center text-sm text-zinc-500">
+                Guardando usuario...
+            </span>
 
             <flux:button
                 type="button"

@@ -19,24 +19,24 @@ new class extends Component
 
     public string $busqueda = '';
 
-    private function autorizarAdministrador(): void
+    private function autorizarGestion(): void
     {
         abort_unless(
             auth()->check()
             && auth()->user()->activo
-            && auth()->user()->tieneRol('Administrador'),
+            && auth()->user()->roles()->whereIn('nombre', ['Administrador', 'Supervisor'])->exists(),
             403
         );
     }
 
     public function mount(): void
     {
-        $this->autorizarAdministrador();
+        $this->autorizarGestion();
     }
 
     public function guardar(): void
     {
-        $this->autorizarAdministrador();
+        $this->autorizarGestion();
 
         $datos = $this->validate([
             'equipo_id' => [
@@ -99,7 +99,7 @@ new class extends Component
 
     public function editar(int $id): void
     {
-        $this->autorizarAdministrador();
+        $this->autorizarGestion();
 
         $plan = PlanMantenimiento::findOrFail($id);
 
@@ -116,7 +116,7 @@ new class extends Component
 
     public function cambiarEstado(int $id): void
     {
-        $this->autorizarAdministrador();
+        $this->autorizarGestion();
 
         $plan = PlanMantenimiento::findOrFail($id);
 
@@ -141,7 +141,7 @@ new class extends Component
 
     public function cancelar(): void
     {
-        $this->autorizarAdministrador();
+        $this->autorizarGestion();
 
         $this->reset([
             'planEditando',
@@ -158,7 +158,7 @@ new class extends Component
 
     public function with(): array
     {
-        $this->autorizarAdministrador();
+        $this->autorizarGestion();
 
         return [
             'planes' => PlanMantenimiento::with('equipo')

@@ -2,7 +2,6 @@
 
 namespace App\Providers;
 
-use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Http\Responses\LoginResponse;
 use App\Models\User;
@@ -48,10 +47,6 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::resetUserPasswordsUsing(
             ResetUserPassword::class
         );
-
-        Fortify::createUsersUsing(
-            CreateNewUser::class
-        );
     }
 
     /**
@@ -73,10 +68,6 @@ class FortifyServiceProvider extends ServiceProvider
 
         Fortify::confirmPasswordView(
             fn () => view('pages::auth.confirm-password')
-        );
-
-        Fortify::registerView(
-            fn () => view('pages::auth.register')
         );
 
         Fortify::resetPasswordView(
