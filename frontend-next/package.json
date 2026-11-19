@@ -9,12 +9,16 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@prisma/adapter-mariadb": "^7.10.1",
+    "@prisma/client": "^7.10.1",
     "axios": "^1.21.1",
     "lucide-react": "^1.76.0",
+    "mariadb": "^3.5.5",
     "next": "16.4.6",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "recharts": "^3.11.0"
+    "recharts": "^3.11.0",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.5",
@@ -25,6 +29,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
     "postcss": "^8.5.33",
+    "prisma": "^7.10.1",
     "tailwindcss": "^4.3.3",
     "typescript": "^5"
   }

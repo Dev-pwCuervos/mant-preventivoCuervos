@@ -1,0 +1,237 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model categorias_equipos {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  nombre      String    @unique(map: "nombre") @db.VarChar(100)
+  descripcion String?   @db.Text
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+  equipos     equipos[]
+}
+
+model equipos {
+  id                   BigInt                 @id @default(autoincrement()) @db.UnsignedBigInt
+  codigo               String                 @unique(map: "codigo") @db.VarChar(30)
+  nombre               String                 @db.VarChar(150)
+  descripcion          String?                @db.Text
+  marca                String?                @db.VarChar(100)
+  modelo               String?                @db.VarChar(100)
+  numero_serie         String?                @db.VarChar(100)
+  categoria_id         BigInt                 @db.UnsignedBigInt
+  ubicacion_id         BigInt                 @db.UnsignedBigInt
+  estado_equipo_id     BigInt                 @db.UnsignedBigInt
+  fecha_adquisicion    DateTime?              @db.Date
+  created_at           DateTime?              @db.Timestamp(0)
+  updated_at           DateTime?              @db.Timestamp(0)
+  deleted_at           DateTime?              @db.Timestamp(0)
+  categorias_equipos   categorias_equipos     @relation(fields: [categoria_id], references: [id], onUpdate: Restrict, map: "fk_equipo_categoria")
+  estados_equipo       estados_equipo         @relation(fields: [estado_equipo_id], references: [id], onUpdate: Restrict, map: "fk_equipo_estado")
+  ubicaciones          ubicaciones            @relation(fields: [ubicacion_id], references: [id], onUpdate: Restrict, map: "fk_equipo_ubicacion")
+  planes_mantenimiento planes_mantenimiento[]
+
+  @@index([categoria_id], map: "idx_equipos_categoria")
+  @@index([estado_equipo_id], map: "idx_equipos_estado")
+  @@index([ubicacion_id], map: "idx_equipos_ubicacion")
+}
+
+model estados_equipo {
+  id      BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  codigo  String    @unique(map: "codigo") @db.VarChar(40)
+  nombre  String    @unique(map: "nombre") @db.VarChar(80)
+  equipos equipos[]
+}
+
+model estados_mantenimiento {
+  id                                                                                                        BigInt                            @id @default(autoincrement()) @db.UnsignedBigInt
+  codigo                                                                                                    String                            @unique(map: "codigo") @db.VarChar(40)
+  nombre                                                                                                    String                            @unique(map: "nombre") @db.VarChar(80)
+  historial_estados_mantenimiento_historial_estados_mantenimiento_estado_anterior_idToestados_mantenimiento historial_estados_mantenimiento[] @relation("historial_estados_mantenimiento_estado_anterior_idToestados_mantenimiento")
+  historial_estados_mantenimiento_historial_estados_mantenimiento_estado_nuevo_idToestados_mantenimiento    historial_estados_mantenimiento[] @relation("historial_estados_mantenimiento_estado_nuevo_idToestados_mantenimiento")
+  mantenimientos                                                                                            mantenimientos[]
+}
+
+model evidencias {
+  id              BigInt         @id @default(autoincrement()) @db.UnsignedBigInt
+  intervencion_id BigInt         @db.UnsignedBigInt
+  usuario_id      BigInt         @db.UnsignedBigInt
+  nombre_original String         @db.VarChar(255)
+  clave_s3        String         @db.VarChar(500)
+  tipo_mime       String         @db.VarChar(100)
+  tamano_bytes    BigInt         @db.UnsignedBigInt
+  created_at      DateTime?      @db.Timestamp(0)
+  intervenciones  intervenciones @relation(fields: [intervencion_id], references: [id], onUpdate: Restrict, map: "fk_evid_interv")
+  usuarios        usuarios       @relation(fields: [usuario_id], references: [id], onUpdate: Restrict, map: "fk_evid_usuario")
+
+  @@index([intervencion_id], map: "idx_evid_interv")
+  @@index([usuario_id], map: "idx_evid_usuario")
+}
+
+model historial_estados_mantenimiento {
+  id                                                                                              BigInt                 @id @default(autoincrement()) @db.UnsignedBigInt
+  mantenimiento_id                                                                                BigInt                 @db.UnsignedBigInt
+  estado_anterior_id                                                                              BigInt?                @db.UnsignedBigInt
+  estado_nuevo_id                                                                                 BigInt                 @db.UnsignedBigInt
+  usuario_id                                                                                      BigInt                 @db.UnsignedBigInt
+  motivo                                                                                          String?                @db.Text
+  created_at                                                                                      DateTime               @default(now()) @db.Timestamp(0)
+  estados_mantenimiento_historial_estados_mantenimiento_estado_anterior_idToestados_mantenimiento estados_mantenimiento? @relation("historial_estados_mantenimiento_estado_anterior_idToestados_mantenimiento", fields: [estado_anterior_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_hist_anterior")
+  mantenimientos                                                                                  mantenimientos         @relation(fields: [mantenimiento_id], references: [id], onUpdate: Restrict, map: "fk_hist_mant")
+  estados_mantenimiento_historial_estados_mantenimiento_estado_nuevo_idToestados_mantenimiento    estados_mantenimiento  @relation("historial_estados_mantenimiento_estado_nuevo_idToestados_mantenimiento", fields: [estado_nuevo_id], references: [id], onUpdate: Restrict, map: "fk_hist_nuevo")
+  usuarios                                                                                        usuarios               @relation(fields: [usuario_id], references: [id], onUpdate: Restrict, map: "fk_hist_usuario")
+
+  @@index([estado_anterior_id], map: "idx_hist_anterior")
+  @@index([mantenimiento_id, created_at], map: "idx_hist_mant_fecha")
+  @@index([estado_nuevo_id], map: "idx_hist_nuevo")
+  @@index([usuario_id], map: "idx_hist_usuario")
+}
+
+model intervenciones {
+  id                    BigInt                @id @default(autoincrement()) @db.UnsignedBigInt
+  mantenimiento_id      BigInt                @db.UnsignedBigInt
+  tecnico_ejecutor_id   BigInt                @db.UnsignedBigInt
+  fecha_inicio          DateTime              @db.DateTime(0)
+  fecha_fin             DateTime?             @db.DateTime(0)
+  trabajo_realizado     String                @db.Text
+  observaciones         String?               @db.Text
+  created_at            DateTime?             @db.Timestamp(0)
+  updated_at            DateTime?             @db.Timestamp(0)
+  evidencias            evidencias[]
+  mantenimiento_tecnico mantenimiento_tecnico @relation(fields: [mantenimiento_id, tecnico_ejecutor_id], references: [mantenimiento_id, tecnico_id], onUpdate: Restrict, map: "fk_interv_asignacion")
+
+  @@index([mantenimiento_id, tecnico_ejecutor_id], map: "idx_interv_mant_tecnico")
+}
+
+model mantenimiento_tecnico {
+  id               BigInt           @id @default(autoincrement()) @db.UnsignedBigInt
+  mantenimiento_id BigInt           @db.UnsignedBigInt
+  tecnico_id       BigInt           @db.UnsignedBigInt
+  fecha_asignacion DateTime         @default(now()) @db.DateTime(0)
+  created_at       DateTime?        @db.Timestamp(0)
+  updated_at       DateTime?        @db.Timestamp(0)
+  intervenciones   intervenciones[]
+  mantenimientos   mantenimientos   @relation(fields: [mantenimiento_id], references: [id], onUpdate: Restrict, map: "fk_mt_mantenimiento")
+  usuarios         usuarios         @relation(fields: [tecnico_id], references: [id], onUpdate: Restrict, map: "fk_mt_usuario")
+
+  @@unique([mantenimiento_id, tecnico_id], map: "uq_mantenimiento_tecnico")
+  @@index([tecnico_id], map: "idx_mt_tecnico")
+}
+
+model mantenimientos {
+  id                                                      BigInt                            @id @default(autoincrement()) @db.UnsignedBigInt
+  plan_id                                                 BigInt                            @db.UnsignedBigInt
+  estado_mantenimiento_id                                 BigInt                            @db.UnsignedBigInt
+  prioridad_id                                            BigInt                            @db.UnsignedBigInt
+  fecha_programada                                        DateTime                          @db.DateTime(0)
+  trabajo_terminado_por                                   BigInt?                           @db.UnsignedBigInt
+  fecha_trabajo_terminado                                 DateTime?                         @db.DateTime(0)
+  cerrado_por                                             BigInt?                           @db.UnsignedBigInt
+  fecha_cierre                                            DateTime?                         @db.DateTime(0)
+  observaciones                                           String?                           @db.Text
+  created_at                                              DateTime?                         @db.Timestamp(0)
+  updated_at                                              DateTime?                         @db.Timestamp(0)
+  historial_estados_mantenimiento                         historial_estados_mantenimiento[]
+  mantenimiento_tecnico                                   mantenimiento_tecnico[]
+  usuarios_mantenimientos_cerrado_porTousuarios           usuarios?                         @relation("mantenimientos_cerrado_porTousuarios", fields: [cerrado_por], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_mant_cerrado")
+  estados_mantenimiento                                   estados_mantenimiento             @relation(fields: [estado_mantenimiento_id], references: [id], onUpdate: Restrict, map: "fk_mant_estado")
+  planes_mantenimiento                                    planes_mantenimiento              @relation(fields: [plan_id], references: [id], onUpdate: Restrict, map: "fk_mant_plan")
+  prioridades                                             prioridades                       @relation(fields: [prioridad_id], references: [id], onUpdate: Restrict, map: "fk_mant_prioridad")
+  usuarios_mantenimientos_trabajo_terminado_porTousuarios usuarios?                         @relation("mantenimientos_trabajo_terminado_porTousuarios", fields: [trabajo_terminado_por], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_mant_terminado")
+  observaciones_supervision                               observaciones_supervision[]
+
+  @@index([cerrado_por], map: "idx_mant_cerrado_por")
+  @@index([estado_mantenimiento_id, fecha_programada], map: "idx_mant_estado_fecha")
+  @@index([plan_id], map: "idx_mant_plan")
+  @@index([prioridad_id], map: "idx_mant_prioridad")
+  @@index([trabajo_terminado_por], map: "idx_mant_terminado_por")
+}
+
+model observaciones_supervision {
+  id               BigInt         @id @default(autoincrement()) @db.UnsignedBigInt
+  mantenimiento_id BigInt         @db.UnsignedBigInt
+  supervisor_id    BigInt         @db.UnsignedBigInt
+  comentario       String         @db.Text
+  created_at       DateTime?      @db.Timestamp(0)
+  mantenimientos   mantenimientos @relation(fields: [mantenimiento_id], references: [id], onUpdate: Restrict, map: "fk_obs_mant")
+  usuarios         usuarios       @relation(fields: [supervisor_id], references: [id], onUpdate: Restrict, map: "fk_obs_supervisor")
+
+  @@index([mantenimiento_id], map: "idx_obs_mant")
+  @@index([supervisor_id], map: "idx_obs_supervisor")
+}
+
+model planes_mantenimiento {
+  id              BigInt           @id @default(autoincrement()) @db.UnsignedBigInt
+  equipo_id       BigInt           @db.UnsignedBigInt
+  nombre          String           @db.VarChar(150)
+  descripcion     String           @db.Text
+  frecuencia_dias Int              @db.UnsignedInt
+  fecha_inicio    DateTime         @db.Date
+  activo          Boolean          @default(true)
+  created_at      DateTime?        @db.Timestamp(0)
+  updated_at      DateTime?        @db.Timestamp(0)
+  mantenimientos  mantenimientos[]
+  equipos         equipos          @relation(fields: [equipo_id], references: [id], onUpdate: Restrict, map: "fk_plan_equipo")
+
+  @@index([equipo_id], map: "idx_planes_equipo")
+}
+
+model prioridades {
+  id             BigInt           @id @default(autoincrement()) @db.UnsignedBigInt
+  nombre         String           @unique(map: "nombre") @db.VarChar(50)
+  nivel          Int              @unique(map: "nivel") @db.UnsignedTinyInt
+  mantenimientos mantenimientos[]
+}
+
+model roles {
+  id          BigInt        @id @default(autoincrement()) @db.UnsignedBigInt
+  nombre      String        @unique(map: "nombre") @db.VarChar(50)
+  descripcion String?       @db.VarChar(255)
+  created_at  DateTime?     @db.Timestamp(0)
+  updated_at  DateTime?     @db.Timestamp(0)
+  usuario_rol usuario_rol[]
+}
+
+model ubicaciones {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  nombre      String    @unique(map: "nombre") @db.VarChar(100)
+  descripcion String?   @db.Text
+  activo      Boolean   @default(true)
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+  equipos     equipos[]
+}
+
+model usuario_rol {
+  usuario_id BigInt   @db.UnsignedBigInt
+  rol_id     BigInt   @db.UnsignedBigInt
+  roles      roles    @relation(fields: [rol_id], references: [id], onUpdate: Restrict, map: "fk_ur_rol")
+  usuarios   usuarios @relation(fields: [usuario_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_ur_usuario")
+
+  @@id([usuario_id, rol_id])
+  @@index([rol_id], map: "idx_ur_rol")
+}
+
+model usuarios {
+  id                                                            BigInt                            @id @default(autoincrement()) @db.UnsignedBigInt
+  nombre                                                        String                            @db.VarChar(100)
+  email                                                         String                            @unique(map: "email") @db.VarChar(150)
+  password                                                      String                            @db.VarChar(255)
+  activo                                                        Boolean                           @default(true)
+  remember_token                                                String?                           @db.VarChar(100)
+  email_verified_at                                             DateTime?                         @db.Timestamp(0)
+  created_at                                                    DateTime?                         @db.Timestamp(0)
+  updated_at                                                    DateTime?                         @db.Timestamp(0)
+  evidencias                                                    evidencias[]
+  historial_estados_mantenimiento                               historial_estados_mantenimiento[]
+  mantenimiento_tecnico                                         mantenimiento_tecnico[]
+  mantenimientos_mantenimientos_cerrado_porTousuarios           mantenimientos[]                  @relation("mantenimientos_cerrado_porTousuarios")
+  mantenimientos_mantenimientos_trabajo_terminado_porTousuarios mantenimientos[]                  @relation("mantenimientos_trabajo_terminado_porTousuarios")
+  observaciones_supervision                                     observaciones_supervision[]
+  usuario_rol                                                   usuario_rol[]
+}
