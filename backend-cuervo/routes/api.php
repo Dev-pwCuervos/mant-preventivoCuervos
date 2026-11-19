@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\MantenimientoController;
 use App\Http\Controllers\Api\SeguimientoController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\ReporteController;
 
 /*
 |--------------------------------------------------------------------------
@@ -41,6 +42,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     | Usuario autenticado
     |--------------------------------------------------------------------------
     */
+
+    Route::get(
+    '/reportes',
+    [ReporteController::class, 'index']
+)->name('api.reportes.index');
 
     Route::get('/user', function (Request $request) {
         $usuario = $request->user();
