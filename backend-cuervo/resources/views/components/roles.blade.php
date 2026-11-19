@@ -11,6 +11,7 @@ new class extends Component
     public string $descripcion = '';
 
     public ?int $rolEditando = null;
+    public bool $mostrarFormulario = false;
 
     public function guardar(): void
     {
@@ -58,6 +59,12 @@ new class extends Component
         $this->cancelar();
     }
 
+    public function abrirFormulario(): void
+    {
+        $this->cancelar();
+        $this->mostrarFormulario = true;
+    }
+
     public function editar(int $id): void
     {
         $rol = Rol::findOrFail($id);
@@ -65,6 +72,7 @@ new class extends Component
         $this->rolEditando = $rol->id;
         $this->nombre = $rol->nombre;
         $this->descripcion = $rol->descripcion ?? '';
+        $this->mostrarFormulario = true;
     }
 
     public function cancelar(): void
@@ -75,6 +83,7 @@ new class extends Component
             'rolEditando',
         ]);
         $this->resetValidation();
+        $this->mostrarFormulario = false;
     }
 
     public function eliminar(int $id): void
@@ -137,7 +146,14 @@ new class extends Component
         </div>
     @enderror
 
-    <form wire:submit="guardar" class="space-y-4">
+    <div class="flex justify-end">
+        <flux:button type="button" variant="primary" wire:click="abrirFormulario">Nuevo rol</flux:button>
+    </div>
+
+    @if($mostrarFormulario)
+        <section class="rounded-lg border border-zinc-200 p-5 dark:border-zinc-700">
+        <h2 class="mb-4 text-lg font-semibold">{{ $rolEditando ? 'Editar rol' : 'Nuevo rol' }}</h2>
+        <form wire:submit="guardar" class="space-y-4">
 
         <flux:input
             wire:model="nombre"
@@ -156,13 +172,13 @@ new class extends Component
                 {{ $rolEditando ? 'Actualizar rol' : 'Guardar rol' }}
             </flux:button>
 
-            @if ($rolEditando)
-                <flux:button type="button" wire:click="cancelar">
-                    Cancelar
-                </flux:button>
-            @endif
+            <flux:button type="button" wire:click="cancelar">
+                Cancelar
+            </flux:button>
         </div>
-    </form>
+        </form>
+        </section>
+    @endif
 
     <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">

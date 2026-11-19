@@ -8,6 +8,7 @@ use Livewire\Component;
 new class extends Component
 {
     public ?int $categoriaEditando = null;
+    public bool $mostrarFormulario = false;
 
     public string $nombre = '';
     public string $descripcion = '';
@@ -65,6 +66,12 @@ new class extends Component
         session()->flash('mensaje', $mensaje);
     }
 
+    public function abrirFormulario(): void
+    {
+        $this->cancelar();
+        $this->mostrarFormulario = true;
+    }
+
     public function editar(int $id): void
     {
         $this->autorizarAdministrador();
@@ -74,6 +81,7 @@ new class extends Component
         $this->categoriaEditando = $categoria->id;
         $this->nombre = $categoria->nombre;
         $this->descripcion = $categoria->descripcion ?? '';
+        $this->mostrarFormulario = true;
     }
 
     public function eliminar(int $id): void
@@ -110,6 +118,7 @@ new class extends Component
         ]);
 
         $this->resetValidation();
+        $this->mostrarFormulario = false;
     }
 
     public function with(): array
@@ -155,7 +164,14 @@ new class extends Component
     @enderror
 
     <!-- FORMULARIO -->
-    <form wire:submit="guardar" class="space-y-4">
+    <div class="flex justify-end">
+        <flux:button type="button" variant="primary" wire:click="abrirFormulario">Nueva categor?a</flux:button>
+    </div>
+
+    @if($mostrarFormulario)
+        <section class="rounded-lg border border-zinc-200 p-5 dark:border-zinc-700">
+        <h2 class="mb-4 text-lg font-semibold">{{ $categoriaEditando ? 'Editar categor?a' : 'Nueva categor?a' }}</h2>
+        <form wire:submit="guardar" class="space-y-4">
 
         <flux:input
             wire:model="nombre"
@@ -177,17 +193,17 @@ new class extends Component
                     : 'Registrar categoría' }}
             </flux:button>
 
-            @if($categoriaEditando)
-                <flux:button
-                    type="button"
-                    wire:click="cancelar"
-                >
-                    Cancelar
-                </flux:button>
-            @endif
+            <flux:button
+                type="button"
+                wire:click="cancelar"
+            >
+                Cancelar
+            </flux:button>
 
         </div>
-    </form>
+        </form>
+        </section>
+    @endif
 
     <flux:separator />
 

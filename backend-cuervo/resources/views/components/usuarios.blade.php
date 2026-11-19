@@ -11,6 +11,7 @@ use Livewire\Component;
 new class extends Component
 {
     public ?int $usuarioEditando = null;
+    public bool $mostrarFormulario = false;
 
     public string $nombre = '';
     public string $email = '';
@@ -118,6 +119,12 @@ new class extends Component
         $this->cancelar();
     }
 
+    public function abrirFormulario(): void
+    {
+        $this->cancelar();
+        $this->mostrarFormulario = true;
+    }
+
     public function editar(int $id): void
     {
         $this->autorizarAdministrador();
@@ -135,6 +142,7 @@ new class extends Component
 
         $this->password = '';
         $this->password_confirmation = '';
+        $this->mostrarFormulario = true;
     }
 
     public function cambiarEstado(int $id): void
@@ -177,6 +185,7 @@ new class extends Component
         ]);
 
         $this->resetValidation();
+        $this->mostrarFormulario = false;
     }
 
     public function with(): array
@@ -226,7 +235,14 @@ new class extends Component
     @enderror
 
     <!-- FORMULARIO -->
-    <form wire:submit="guardar" class="space-y-4">
+    <div class="flex justify-end">
+        <flux:button type="button" variant="primary" wire:click="abrirFormulario">Nuevo usuario</flux:button>
+    </div>
+
+    @if($mostrarFormulario)
+        <section class="rounded-lg border border-zinc-200 p-5 dark:border-zinc-700">
+        <h2 class="mb-4 text-lg font-semibold">{{ $usuarioEditando ? 'Editar usuario' : 'Nuevo usuario' }}</h2>
+        <form wire:submit="guardar" class="space-y-4">
 
         <flux:input
             wire:model="nombre"
@@ -294,17 +310,17 @@ new class extends Component
                     : 'Registrar usuario' }}
             </flux:button>
 
-            @if($usuarioEditando)
-                <flux:button
-                    type="button"
-                    wire:click="cancelar"
-                >
-                    Cancelar
-                </flux:button>
-            @endif
+            <flux:button
+                type="button"
+                wire:click="cancelar"
+            >
+                Cancelar
+            </flux:button>
 
         </div>
-    </form>
+        </form>
+        </section>
+    @endif
 
     <flux:separator />
 
