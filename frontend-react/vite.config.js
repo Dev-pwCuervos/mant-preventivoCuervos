@@ -1,7 +1,25 @@
-import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
-// https://vite.dev/config/
+const laravelProxy = {
+    target: 'http://backend-cuervo.test',
+    changeOrigin: true,
+    cookieDomainRewrite: '',
+};
+
 export default defineConfig({
-  plugins: [react()],
-})
+    plugins: [react()],
+
+    server: {
+        host: '127.0.0.1',
+        port: 5173,
+        strictPort: true,
+
+        proxy: {
+            '/api': laravelProxy,
+            '/sanctum': laravelProxy,
+            '/login': laravelProxy,
+            '/logout': laravelProxy,
+        },
+    },
+});

@@ -23,4 +23,4 @@ Thumbs.db
 
 # Editores
 .idea/
-.vscode/
+.vscode/*.bak

@@ -1,0 +1,157 @@
+
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\Mantenimiento;
+use App\Models\User;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+
+class AsignacionController extends Controller
+{
+    private function autorizarGestion(Request $request): void
+    {
+        $usuario = $request->user();
+
+        abort_unless(
+            $usuario &&
+            (bool) $usuario->activo &&
+            $usuario->roles()
+                ->whereIn('nombre', [
+                    'Administrador',
+                    'Supervisor',
+                ])
+                ->exists(),
+            403,
+            'No tienes permisos para gestionar asignaciones.'
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Listar mantenimientos y técnicos disponibles
+    |--------------------------------------------------------------------------
+    */
+
+    public function index(Request $request): JsonResponse
+    {
+        $this->autorizarGestion($request);
+
+        $mantenimientos = Mantenimiento::query()
+            ->with([
+                'plan',
+                'estado',
+                'prioridad',
+                'tecnicos',
+            ])
+            ->whereHas('estado', function ($query) {
+                $query->whereIn('codigo', [
+                    'PENDIENTE',
+                    'EN_PROCESO',
+                ]);
+            })
+            ->orderBy('fecha_programada')
+            ->get();
+
+        $tecnicos = User::query()
+            ->where('activo', true)
+            ->whereHas('roles', function ($query) {
+                $query->where('nombre', 'Técnico');
+            })
+            ->orderBy('nombre')
+            ->get([
+                'id',
+                'nombre',
+                'email',
+            ]);
+
+        return response()->json([
+            'mantenimientos' => $mantenimientos,
+            'tecnicos' => $tecnicos,
+        ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Asignar técnicos a un mantenimiento
+    |--------------------------------------------------------------------------
+    */
+
+    public function store(
+        Request $request,
+        Mantenimiento $mantenimiento
+    ): JsonResponse {
+        $this->autorizarGestion($request);
+
+        $datos = $request->validate([
+            'tecnicos' => [
+                'required',
+                'array',
+                'min:1',
+            ],
+            'tecnicos.*' => [
+                'required',
+                'integer',
+                'distinct',
+                Rule::exists('usuarios', 'id'),
+            ],
+        ]);
+
+        $tecnicosValidos = User::query()
+            ->whereIn('id', $datos['tecnicos'])
+            ->where('activo', true)
+            ->whereHas('roles', function ($query) {
+                $query->where('nombre', 'Técnico');
+            })
+            ->count();
+
+        abort_unless(
+            $tecnicosValidos === count($datos['tecnicos']),
+            422,
+            'Todos los usuarios seleccionados deben ser técnicos activos.'
+        );
+
+        DB::transaction(function () use ($mantenimiento, $datos) {
+
+            $mantenimiento = Mantenimiento::query()
+                ->lockForUpdate()
+                ->findOrFail($mantenimiento->id);
+
+            $mantenimiento->load('estado');
+
+            abort_unless(
+                in_array(
+                    $mantenimiento->estado->codigo,
+                    ['PENDIENTE', 'EN_PROCESO'],
+                    true
+                ),
+                422,
+                'Este mantenimiento no permite nuevas asignaciones.'
+            );
+
+            foreach ($datos['tecnicos'] as $tecnicoId) {
+
+                $mantenimiento->tecnicos()
+                    ->syncWithoutDetaching([
+                        $tecnicoId => [
+                            'fecha_asignacion' => now(),
+                        ],
+                    ]);
+            }
+        });
+
+        return response()->json([
+            'message' => 'Técnicos asignados correctamente.',
+            'mantenimiento' => $mantenimiento->fresh()->load([
+                'plan',
+                'estado',
+                'prioridad',
+                'tecnicos',
+            ]),
+        ]);
+    }
+}

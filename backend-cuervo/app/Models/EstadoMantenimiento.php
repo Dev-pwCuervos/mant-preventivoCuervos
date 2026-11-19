@@ -9,6 +9,8 @@ class EstadoMantenimiento extends Model
 {
     protected $table = 'estados_mantenimiento';
 
+    public $timestamps = false;
+
     protected $fillable = [
         'codigo',
         'nombre',
