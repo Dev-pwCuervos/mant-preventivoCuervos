@@ -66,6 +66,16 @@ class MantenimientoController extends Controller
 
         // Los técnicos solo ven sus asignaciones.
         if (!$this->puedeGestionar($usuario)) {
+            $consulta->with([
+                'historialEstados' => fn ($query) => $query
+                    ->whereHas('estadoAnterior', fn ($estado) =>
+                        $estado->where('codigo', 'EN_REVISION')
+                    )
+                    ->whereHas('estadoNuevo', fn ($estado) =>
+                        $estado->where('codigo', 'EN_PROCESO')
+                    ),
+            ]);
+
             $consulta->whereHas(
                 'tecnicos',
                 fn ($query) =>

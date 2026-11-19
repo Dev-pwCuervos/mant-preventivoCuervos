@@ -190,4 +190,57 @@ class SeguimientoController extends Controller
             ]),
         ]);
     }
+
+    public function rechazar(
+        Request $request,
+        Mantenimiento $mantenimiento
+    ): JsonResponse {
+        $this->autorizarGestion($request);
+
+        $datos = $request->validate([
+            'motivo' => ['required', 'string', 'max:5000'],
+        ]);
+
+        DB::transaction(function () use ($mantenimiento, $request, $datos) {
+            $orden = Mantenimiento::query()
+                ->lockForUpdate()
+                ->findOrFail($mantenimiento->id);
+
+            $orden->load('estado');
+
+            if ($orden->estado?->codigo !== 'EN_REVISION') {
+                throw ValidationException::withMessages([
+                    'estado' => 'Solo se pueden rechazar mantenimientos en revisión.',
+                ]);
+            }
+
+            $estadoEnProceso = EstadoMantenimiento::query()
+                ->where('codigo', 'EN_PROCESO')
+                ->firstOrFail();
+
+            $estadoAnteriorId = $orden->estado_mantenimiento_id;
+            $orden->estado_mantenimiento_id = $estadoEnProceso->id;
+            $orden->trabajo_terminado_por = null;
+            $orden->fecha_trabajo_terminado = null;
+            $orden->cerrado_por = null;
+            $orden->fecha_cierre = null;
+            $orden->save();
+
+            HistorialEstadoMantenimiento::create([
+                'mantenimiento_id' => $orden->id,
+                'estado_anterior_id' => $estadoAnteriorId,
+                'estado_nuevo_id' => $estadoEnProceso->id,
+                'usuario_id' => $request->user()->id,
+                'motivo' => $datos['motivo'],
+            ]);
+        });
+
+        return response()->json([
+            'message' => 'Mantenimiento devuelto al técnico para corrección.',
+            'mantenimiento' => $mantenimiento->fresh()->load([
+                'plan', 'estado', 'prioridad', 'tecnicos',
+                'trabajoTerminadoPor', 'cerradoPor',
+            ]),
+        ]);
+    }
 }

@@ -5,6 +5,7 @@ import {
     RefreshCw,
     History,
     CheckCircle2,
+    RotateCcw,
     Clock3,
     UserRound,
     CalendarDays,
@@ -68,6 +69,8 @@ export default function Seguimiento({ usuario }) {
 
     const [motivo, setMotivo] = useState('');
     const [ordenCierre, setOrdenCierre] = useState(null);
+    const [ordenRechazo, setOrdenRechazo] = useState(null);
+    const [motivoRechazo, setMotivoRechazo] = useState('');
 
     const [error, setError] = useState('');
     const [mensaje, setMensaje] = useState('');
@@ -152,6 +155,41 @@ export default function Seguimiento({ usuario }) {
             setOrdenCierre(null);
             setMotivo('');
 
+            await cargarDatos(pagina);
+        } catch (err) {
+            setError(obtenerError(err));
+        } finally {
+            setProcesando(null);
+        }
+    };
+
+    const rechazarMantenimiento = async (evento) => {
+        evento.preventDefault();
+
+        if (!ordenRechazo) return;
+
+        const explicacion = motivoRechazo.trim();
+
+        if (!explicacion) {
+            setError('Explica al técnico qué debe corregir.');
+            return;
+        }
+
+        setProcesando(ordenRechazo.id);
+        setError('');
+        setMensaje('');
+
+        try {
+            await api.post(
+                `/api/mantenimientos/${ordenRechazo.id}/rechazar`,
+                { motivo: explicacion }
+            );
+
+            setMensaje(
+                `Mantenimiento #${ordenRechazo.id} devuelto al técnico.`
+            );
+            setOrdenRechazo(null);
+            setMotivoRechazo('');
             await cargarDatos(pagina);
         } catch (err) {
             setError(obtenerError(err));
@@ -313,17 +351,32 @@ export default function Seguimiento({ usuario }) {
                                     </button>
 
                                     {orden.estado?.codigo === 'EN_REVISION' && (
-                                        <button
-                                            type="button"
-                                            className="primary-button"
-                                            onClick={() => {
-                                                setOrdenCierre(orden);
-                                                setMotivo('');
-                                            }}
-                                        >
-                                            <CheckCircle2 size={17} />
-                                            Aprobar y cerrar
-                                        </button>
+                                        <>
+                                            <button
+                                                type="button"
+                                                className="tracking-secondary"
+                                                onClick={() => {
+                                                    setOrdenRechazo(orden);
+                                                    setMotivoRechazo('');
+                                                    setError('');
+                                                }}
+                                            >
+                                                <RotateCcw size={17} />
+                                                Rechazar y devolver
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                className="primary-button"
+                                                onClick={() => {
+                                                    setOrdenCierre(orden);
+                                                    setMotivo('');
+                                                }}
+                                            >
+                                                <CheckCircle2 size={17} />
+                                                Aprobar y cerrar
+                                            </button>
+                                        </>
                                     )}
                                 </div>
                             </article>
@@ -479,6 +532,70 @@ export default function Seguimiento({ usuario }) {
                                     {procesando
                                         ? 'Cerrando...'
                                         : 'Confirmar cierre'}
+                                </button>
+                            </div>
+                        </form>
+                    </section>
+                </div>
+            )}
+
+            {ordenRechazo && (
+                <div className="tracking-overlay">
+                    <section
+                        className="tracking-modal"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="Rechazar mantenimiento"
+                    >
+                        <div className="tracking-modal-heading">
+                            <div>
+                                <h2>Devolver al técnico</h2>
+                                <p>Orden #{ordenRechazo.id}</p>
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={() => setOrdenRechazo(null)}
+                                aria-label="Cancelar rechazo"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={rechazarMantenimiento}>
+                            <div className="maintenance-field">
+                                <label htmlFor="motivo-rechazo">
+                                    Qué debe corregir el técnico
+                                </label>
+                                <textarea
+                                    id="motivo-rechazo"
+                                    rows={4}
+                                    maxLength={5000}
+                                    required
+                                    value={motivoRechazo}
+                                    onChange={(e) => setMotivoRechazo(e.target.value)}
+                                    placeholder="Describe el error o trabajo pendiente..."
+                                />
+                            </div>
+
+                            {error && <div className="app-error" role="alert">{error}</div>}
+
+                            <div className="tracking-actions">
+                                <button
+                                    type="button"
+                                    className="tracking-secondary"
+                                    onClick={() => setOrdenRechazo(null)}
+                                    disabled={procesando !== null}
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="primary-button"
+                                    disabled={procesando !== null}
+                                >
+                                    <RotateCcw size={17} />
+                                    {procesando ? 'Devolviendo...' : 'Confirmar devolución'}
                                 </button>
                             </div>
                         </form>

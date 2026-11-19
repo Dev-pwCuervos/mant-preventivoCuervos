@@ -161,4 +161,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     )->whereNumber('mantenimiento')
       ->name('api.seguimiento.cerrar');
 
+    Route::post(
+        '/mantenimientos/{mantenimiento}/rechazar',
+        [SeguimientoController::class, 'rechazar']
+    )->whereNumber('mantenimiento')
+      ->name('api.seguimiento.rechazar');
+
 });

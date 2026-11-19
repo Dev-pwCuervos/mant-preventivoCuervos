@@ -218,6 +218,7 @@ export default function Intervenciones({ usuario }) {
                         const codigo = item.estado?.codigo;
                         const pendiente = codigo === 'PENDIENTE';
                         const enProceso = codigo === 'EN_PROCESO';
+                        const ultimoRechazo = item.historial_estados?.[0];
 
                         return (
                             <section
@@ -274,6 +275,13 @@ export default function Intervenciones({ usuario }) {
 
                                 {esTecnico && enProceso && (
                                     <div className="intervention-finish">
+                                        {ultimoRechazo?.motivo && (
+                                            <div className="app-error" role="status">
+                                                <strong>Correcciones solicitadas:</strong>{' '}
+                                                {ultimoRechazo.motivo}
+                                            </div>
+                                        )}
+
                                         <label htmlFor={`obs-${item.id}`}>
                                             Observaciones del trabajo
                                         </label>
