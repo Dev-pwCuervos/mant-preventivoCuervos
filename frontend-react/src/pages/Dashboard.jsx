@@ -9,6 +9,7 @@ import {
     Activity,
     ArrowUpRight,
     RefreshCw,
+    Bell,
 } from 'lucide-react';
 
 import api from '../services/api';
@@ -50,9 +51,32 @@ function formatearFecha(fecha) {
         : valor.toLocaleString('es-GT');
 }
 
+function formatearFechaPlan(fecha) {
+    if (!fecha) return '—';
+
+    const [anio, mes, dia] = fecha.split('-').map(Number);
+    const valor = new Date(anio, mes - 1, dia);
+
+    return Number.isNaN(valor.getTime())
+        ? fecha
+        : valor.toLocaleDateString('es-GT', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+        });
+}
+
+function textoVencimiento(dias) {
+    if (dias === 0) return 'Hoy';
+    if (dias === 1) return 'Mañana';
+
+    return `En ${dias} días`;
+}
+
 export default function Dashboard({ usuario, onNavigate }) {
     const [estadisticas, setEstadisticas] = useState(null);
     const [recientes, setRecientes] = useState([]);
+    const [proximosPlanes, setProximosPlanes] = useState([]);
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState('');
 
@@ -73,7 +97,11 @@ export default function Dashboard({ usuario, onNavigate }) {
 
             setEstadisticas(respuesta.data.estadisticas);
             setRecientes(respuesta.data.recientes || []);
+            setProximosPlanes(
+                puedeGestionar ? respuesta.data.proximos_planes || [] : []
+            );
         } catch (err) {
+            setProximosPlanes([]);
             setError(
                 err.response?.data?.message ||
                 'No fue posible cargar las estadísticas.'
@@ -81,7 +109,7 @@ export default function Dashboard({ usuario, onNavigate }) {
         } finally {
             setCargando(false);
         }
-    }, []);
+    }, [puedeGestionar]);
 
     useEffect(() => {
         cargarDashboard();
@@ -159,6 +187,57 @@ export default function Dashboard({ usuario, onNavigate }) {
                     );
                 })}
             </div>
+
+            {puedeGestionar && (
+                <section className="panel upcoming-panel">
+                    <div className="panel-heading">
+                        <div>
+                            <h2>Próximos mantenimientos</h2>
+                            <p>
+                                Fechas calculadas con la frecuencia de los planes activos
+                            </p>
+                        </div>
+
+                        <div className="upcoming-heading-icon">
+                            <Bell size={20} />
+                        </div>
+                    </div>
+
+                    {cargando ? (
+                        <div className="empty-state">
+                            <p>Calculando próximos mantenimientos...</p>
+                        </div>
+                    ) : proximosPlanes.length === 0 ? (
+                        <div className="empty-state">
+                            <CalendarDays size={35} />
+                            <h3>Sin planes próximos</h3>
+                            <p>No hay planes activos con fecha y frecuencia válidas.</p>
+                        </div>
+                    ) : (
+                        <div className="upcoming-list">
+                            {proximosPlanes.map((plan) => (
+                                <div className="upcoming-item" key={plan.id}>
+                                    <div className="upcoming-item-top">
+                                        <strong>{plan.nombre}</strong>
+                                        <span className={`upcoming-days ${plan.dias_restantes <= 7 ? 'soon' : ''}`}>
+                                            {textoVencimiento(plan.dias_restantes)}
+                                        </span>
+                                    </div>
+
+                                    <p>
+                                        {plan.codigo_equipo} · {plan.equipo}
+                                    </p>
+
+                                    <div className="upcoming-item-meta">
+                                        <span>{formatearFechaPlan(plan.fecha_proxima)}</span>
+                                        <span>Cada {plan.frecuencia_dias} días</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </section>
+            )}
 
             <div className="dashboard-grid">
                 <section className="panel">

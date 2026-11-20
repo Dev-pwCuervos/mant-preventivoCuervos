@@ -133,6 +133,13 @@ class Mantenimiento extends Model
             'cerrado_por'
         );
     }
+
+    public function evidencias(): HasMany
+    {
+        return $this->hasMany(EvidenciaMantenimiento::class, 'mantenimiento_id')
+            ->orderBy('id');
+    }
+
     public function historialEstados(): HasMany
 {
     return $this->hasMany(

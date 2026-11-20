@@ -58,10 +58,11 @@ class MantenimientoController extends Controller
 
         $consulta = Mantenimiento::query()
             ->with([
-                'plan',
+                'plan.equipo.ubicacion',
                 'estado',
                 'prioridad',
                 'tecnicos',
+                'evidencias',
             ]);
 
         // Los técnicos solo ven sus asignaciones.
@@ -257,6 +258,7 @@ class MantenimientoController extends Controller
                 'tecnicos',
                 'trabajoTerminadoPor',
                 'cerradoPor',
+                'evidencias',
             ])
         );
     }

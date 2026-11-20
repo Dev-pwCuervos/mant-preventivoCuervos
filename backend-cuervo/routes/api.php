@@ -1,9 +1,9 @@
-
 <?php
 
 use App\Http\Controllers\Api\AsignacionController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\IntervencionController;
+use App\Http\Controllers\Api\EvidenciaController;
 use App\Http\Controllers\Api\MantenimientoController;
 use App\Http\Controllers\Api\SeguimientoController;
 use Illuminate\Http\Request;
@@ -36,6 +36,12 @@ Route::get('/estado', function () {
 */
 
 Route::middleware(['auth:sanctum'])->group(function () {
+
+    Route::get(
+        '/evidencias/{evidencia}',
+        [EvidenciaController::class, 'show']
+    )->whereNumber('evidencia')
+      ->name('api.evidencias.show');
 
     /*
     |--------------------------------------------------------------------------

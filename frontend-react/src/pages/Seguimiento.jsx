@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 
 import api from '../services/api';
+import EvidenciasFotos from '../components/EvidenciasFotos';
 
 const ESTADOS = [
     { codigo: '', nombre: 'Todos los estados' },
@@ -337,6 +338,8 @@ export default function Seguimiento({ usuario }) {
                                         <p>{orden.observaciones}</p>
                                     </div>
                                 )}
+
+                                <EvidenciasFotos evidencias={orden.evidencias} />
 
                                 <div className="tracking-actions">
                                     <button

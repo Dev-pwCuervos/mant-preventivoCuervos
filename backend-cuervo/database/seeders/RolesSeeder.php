@@ -27,7 +27,7 @@ class RolesSeeder extends Seeder
         foreach ($roles as $rol) {
             Rol::updateOrCreate(
                 ['nombre' => $rol['nombre']],
-                ['descripcion' => $rol['descripcion']]
+                $rol
             );
         }
     }

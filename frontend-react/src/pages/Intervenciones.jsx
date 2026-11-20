@@ -7,9 +7,12 @@ import {
     RefreshCw,
     ClipboardCheck,
     Clock3,
+    MapPin,
+    Camera,
 } from 'lucide-react';
 
 import api from '../services/api';
+import EvidenciasFotos from '../components/EvidenciasFotos';
 
 const ESTADOS = {
     PENDIENTE: 'Pendiente',
@@ -57,6 +60,7 @@ export default function Intervenciones({ usuario }) {
     const [cargando, setCargando] = useState(true);
     const [procesando, setProcesando] = useState(null);
     const [observaciones, setObservaciones] = useState({});
+    const [evidenciasSeleccionadas, setEvidenciasSeleccionadas] = useState({});
     const [error, setError] = useState('');
     const [mensaje, setMensaje] = useState('');
 
@@ -127,9 +131,17 @@ export default function Intervenciones({ usuario }) {
         setMensaje('');
 
         try {
+            const datos = new FormData();
+            datos.append('observaciones', texto);
+
+            for (const archivo of evidenciasSeleccionadas[id] || []) {
+                datos.append('evidencias[]', archivo);
+            }
+
             await api.post(
                 `/api/mantenimientos/${id}/finalizar`,
-                { observaciones: texto }
+                datos,
+                { headers: { 'Content-Type': false } }
             );
 
             setMensaje(
@@ -140,6 +152,10 @@ export default function Intervenciones({ usuario }) {
                 ...actuales,
                 [id]: '',
             }));
+            setEvidenciasSeleccionadas((actuales) => ({
+                ...actuales,
+                [id]: [],
+            }));
 
             await cargarMantenimientos();
         } catch (err) {
@@ -147,6 +163,25 @@ export default function Intervenciones({ usuario }) {
         } finally {
             setProcesando(null);
         }
+    };
+
+    const seleccionarEvidencias = (id, evento) => {
+        const archivos = Array.from(evento.target.files || []);
+        const permitidos = ['image/jpeg', 'image/png', 'image/webp'];
+
+        if (archivos.length > 3 || archivos.some((archivo) =>
+            !permitidos.includes(archivo.type) || archivo.size > 2 * 1024 * 1024
+        )) {
+            setError('Selecciona hasta 3 fotos JPG, PNG o WebP de máximo 2 MB cada una.');
+            evento.target.value = '';
+            return;
+        }
+
+        setError('');
+        setEvidenciasSeleccionadas((actuales) => ({
+            ...actuales,
+            [id]: archivos,
+        }));
     };
 
     return (
@@ -258,6 +293,15 @@ export default function Intervenciones({ usuario }) {
                                             {item.prioridad?.nombre || '—'}
                                         </span>
                                     </div>
+
+                                    <div>
+                                        <MapPin size={17} />
+                                        <span>
+                                            Ubicación:{' '}
+                                            {item.plan?.equipo?.ubicacion?.nombre ||
+                                                'Sin ubicación asignada'}
+                                        </span>
+                                    </div>
                                 </div>
 
                                 {esTecnico && pendiente && (
@@ -300,6 +344,34 @@ export default function Intervenciones({ usuario }) {
                                             }
                                         />
 
+                                        <label className="evidence-upload-button">
+                                            <Camera size={17} />
+                                            Evidencia fotográfica
+                                            <input
+                                                type="file"
+                                                accept="image/jpeg,image/png,image/webp"
+                                                multiple
+                                                disabled={procesando === item.id}
+                                                onChange={(evento) =>
+                                                    seleccionarEvidencias(item.id, evento)
+                                                }
+                                            />
+                                        </label>
+
+                                        <small className="evidence-help">
+                                            Hasta 3 fotos JPG, PNG o WebP de 2 MB cada una.
+                                        </small>
+
+                                        {(evidenciasSeleccionadas[item.id] || []).length > 0 && (
+                                            <ul className="evidence-selected">
+                                                {evidenciasSeleccionadas[item.id].map((archivo) => (
+                                                    <li key={`${archivo.name}-${archivo.lastModified}`}>
+                                                        {archivo.name}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+
                                         <button
                                             className="primary-button"
                                             disabled={procesando === item.id}
@@ -312,6 +384,8 @@ export default function Intervenciones({ usuario }) {
                                         </button>
                                     </div>
                                 )}
+
+                                <EvidenciasFotos evidencias={item.evidencias} />
 
                                 {codigo === 'EN_REVISION' && (
                                     <p className="intervention-message">

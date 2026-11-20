@@ -62,6 +62,7 @@ class SeguimientoController extends Controller
                 'tecnicos:id,nombre',
                 'trabajoTerminadoPor:id,nombre',
                 'cerradoPor:id,nombre',
+                'evidencias',
             ]);
 
         if (!empty($datos['estado'])) {

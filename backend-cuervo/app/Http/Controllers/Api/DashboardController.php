@@ -4,11 +4,51 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Mantenimiento;
+use App\Models\PlanMantenimiento;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
+    private function proximosPlanes(): array
+    {
+        $hoy = now()->startOfDay();
+
+        return PlanMantenimiento::query()
+            ->where('activo', true)
+            ->whereNotNull('fecha_inicio')
+            ->where('frecuencia_dias', '>', 0)
+            ->whereHas('equipo')
+            ->with('equipo:id,codigo,nombre')
+            ->get()
+            ->map(function (PlanMantenimiento $plan) use ($hoy): array {
+                $frecuencia = (int) $plan->frecuencia_dias;
+                $proximaFecha = $plan->fecha_inicio->copy()
+                    ->startOfDay()
+                    ->addDays($frecuencia);
+
+                if ($proximaFecha->lessThan($hoy)) {
+                    $diasTranscurridos = abs($proximaFecha->diffInDays($hoy));
+                    $ciclos = (int) ceil($diasTranscurridos / $frecuencia);
+                    $proximaFecha->addDays($ciclos * $frecuencia);
+                }
+
+                return [
+                    'id' => $plan->id,
+                    'nombre' => $plan->nombre,
+                    'equipo' => $plan->equipo->nombre,
+                    'codigo_equipo' => $plan->equipo->codigo,
+                    'frecuencia_dias' => $frecuencia,
+                    'fecha_proxima' => $proximaFecha->toDateString(),
+                    'dias_restantes' => (int) $hoy->diffInDays($proximaFecha),
+                ];
+            })
+            ->sortBy('fecha_proxima')
+            ->take(5)
+            ->values()
+            ->all();
+    }
+
     public function index(Request $request): JsonResponse
     {
         $usuario = $request->user();
@@ -65,7 +105,7 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
-        return response()->json([
+        $respuesta = [
             'estadisticas' => [
                 'pendientes' => $contarEstado('PENDIENTE'),
                 'en_proceso' => $contarEstado('EN_PROCESO'),
@@ -73,6 +113,12 @@ class DashboardController extends Controller
                 'en_revision' => $contarEstado('EN_REVISION'),
             ],
             'recientes' => $recientes,
-        ]);
+        ];
+
+        if ($puedeGestionar) {
+            $respuesta['proximos_planes'] = $this->proximosPlanes();
+        }
+
+        return response()->json($respuesta);
     }
 }

@@ -9,7 +9,9 @@ use App\Models\Mantenimiento;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Str;
 
 class IntervencionController extends Controller
 {
@@ -99,48 +101,101 @@ class IntervencionController extends Controller
                 'string',
                 'max:5000',
             ],
+            'evidencias' => ['nullable', 'array', 'max:3'],
+            'evidencias.*' => [
+                'required',
+                'file',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:2048',
+            ],
         ]);
 
-        DB::transaction(function () use (
-            $request,
-            $mantenimiento,
-            $datos
-        ) {
-            $orden = Mantenimiento::query()
-                ->lockForUpdate()
-                ->findOrFail($mantenimiento->id);
+        $disco = config('filesystems.evidence_disk', 'local');
+        $rutasGuardadas = [];
 
-            $orden->load('estado');
+        try {
+            DB::transaction(function () use (
+                $request,
+                $mantenimiento,
+                $datos,
+                $disco,
+                &$rutasGuardadas
+            ) {
+                $orden = Mantenimiento::query()
+                    ->lockForUpdate()
+                    ->findOrFail($mantenimiento->id);
 
-            if ($orden->estado?->codigo !== 'EN_PROCESO') {
-                throw ValidationException::withMessages([
-                    'estado' => 'El mantenimiento debe estar en proceso.',
+                $orden->load('estado');
+
+                if ($orden->estado?->codigo !== 'EN_PROCESO') {
+                    throw ValidationException::withMessages([
+                        'estado' => 'El mantenimiento debe estar en proceso.',
+                    ]);
+                }
+
+                foreach ($datos['evidencias'] ?? [] as $archivo) {
+                    $ruta = $archivo->store(
+                        "evidencias/mantenimientos/{$orden->id}",
+                        $disco
+                    );
+
+                    if (!$ruta) {
+                        throw new \RuntimeException(
+                            'No fue posible guardar la evidencia fotográfica.'
+                        );
+                    }
+
+                    $rutasGuardadas[] = $ruta;
+
+                    $orden->evidencias()->create([
+                        'usuario_id' => $request->user()->id,
+                        'disco' => $disco,
+                        'ruta' => $ruta,
+                        'nombre_original' => Str::limit(
+                            $archivo->getClientOriginalName(),
+                            255,
+                            ''
+                        ),
+                        'mime_type' => $archivo->getMimeType(),
+                        'tamano' => $archivo->getSize(),
+                    ]);
+                }
+
+                $anteriorId = $orden->estado_mantenimiento_id;
+                $nuevoId = $this->estadoId('EN_REVISION');
+
+                $orden->estado_mantenimiento_id = $nuevoId;
+                $orden->trabajo_terminado_por = $request->user()->id;
+                $orden->fecha_trabajo_terminado = now();
+                $orden->observaciones = $datos['observaciones'];
+
+                $orden->save();
+
+                HistorialEstadoMantenimiento::create([
+                    'mantenimiento_id' => $orden->id,
+                    'estado_anterior_id' => $anteriorId,
+                    'estado_nuevo_id' => $nuevoId,
+                    'usuario_id' => $request->user()->id,
+                    'motivo' => 'Trabajo terminado y enviado a revisión.',
                 ]);
+            });
+        } catch (\Throwable $error) {
+            foreach ($rutasGuardadas as $ruta) {
+                try {
+                    Storage::disk($disco)->delete($ruta);
+                } catch (\Throwable $errorLimpieza) {
+                    report($errorLimpieza);
+                }
             }
 
-            $anteriorId = $orden->estado_mantenimiento_id;
-            $nuevoId = $this->estadoId('EN_REVISION');
-
-            $orden->estado_mantenimiento_id = $nuevoId;
-            $orden->trabajo_terminado_por = $request->user()->id;
-            $orden->fecha_trabajo_terminado = now();
-            $orden->observaciones = $datos['observaciones'];
-
-            $orden->save();
-
-            HistorialEstadoMantenimiento::create([
-                'mantenimiento_id' => $orden->id,
-                'estado_anterior_id' => $anteriorId,
-                'estado_nuevo_id' => $nuevoId,
-                'usuario_id' => $request->user()->id,
-                'motivo' => 'Trabajo terminado y enviado a revisión.',
-            ]);
-        });
+            throw $error;
+        }
 
         return response()->json([
             'message' => 'Trabajo enviado a revisión correctamente.',
             'mantenimiento' => $mantenimiento->fresh()
-                ->load(['plan', 'estado', 'prioridad']),
+                ->load(['plan', 'estado', 'prioridad', 'evidencias']),
         ]);
     }
 }
